@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --ink: #0f0e0d;
+        --paper: #f5f2ec;
+        --accent: #c8432b;
+        --accent-dark: #9e3320;
+        --muted: #7a766e;
+        --border: #d9d4ca;
+        --field-bg: #fff;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden; /* no scroll anywhere */
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background-color: var(--paper);
+        color: var(--ink);
+        display: flex;
+        align-items: stretch;
+      }
+
+      /* ── OUTER WRAPPER ── */
+      .page-wrap {
+        display: flex;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ── PANEL SYSTEM ── Each panel is 50% width, they swap via translateX ── */
+      .panel-left,
+      .panel-right {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 50%;
+        transition: transform 0.65s cubic-bezier(0.77, 0, 0.18, 1);
+        will-change: transform;
+      }
+
+      .panel-left {
+        left: 0;
+        transform: translateX(0);
+      }
+      .panel-right {
+        left: 50%;
+        transform: translateX(0);
+      }
+
+      /* Swapped state */
+      body.swapped .panel-left {
+        transform: translateX(100%);
+      }
+      body.swapped .panel-right {
+        transform: translateX(-100%);
+      }
+
+      @media (max-width: 767px) {
+        .panel-left {
+          display: none;
+        }
+        .panel-right {
+          left: 0;
+          width: 100%;
+        }
+        body.swapped .panel-right {
+          transform: translateX(0);
+        }
+      }
+
+      /* ── LEFT PANEL – Carousel ── */
+      .panel-left {
+        background: var(--ink);
+        overflow: hidden;
+      }
+
+      /* Carousel slides */
+      .carousel-track {
+        display: flex;
+        height: 100%;
+        transition: transform 0.7s cubic-bezier(0.77, 0, 0.18, 1);
+      }
+
+      .carousel-slide {
+        min-width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .carousel-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.55;
+        filter: saturate(0.7);
+        display: block;
+      }
+
+      /* Overlay caption */
+      .slide-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 2.5rem 2.5rem 2rem;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.72) 0%,
+          transparent 100%
+        );
+        z-index: 2;
+      }
+
+      .slide-caption .divider-line {
+        width: 36px;
+        height: 2px;
+        background: var(--accent);
+        margin-bottom: 1rem;
+      }
+
+      .slide-caption p {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(1.6rem, 2.5vw, 2.4rem);
+        line-height: 1.18;
+        color: #fff;
+        margin-bottom: 0.8rem;
+      }
+
+      .slide-caption span {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.45);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      /* Dots */
+      .carousel-dots {
+        position: absolute;
+        bottom: 1.2rem;
+        right: 1.5rem;
+        display: flex;
+        gap: 7px;
+        z-index: 3;
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition:
+          background 0.3s,
+          transform 0.3s;
+        border: none;
+        padding: 0;
+      }
+
+      .dot.active {
+        background: var(--accent);
+        transform: scale(1.25);
+      }
+
+      /* Big decorative char */
+      .big-char {
+        position: absolute;
+        top: -0.12em;
+        left: -0.05em;
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(14rem, 22vw, 28rem);
+        line-height: 1;
+        color: rgba(255, 255, 255, 0.04);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      /* ── RIGHT PANEL – Forms ── */
+      .panel-right {
+        background: var(--paper);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: clamp(2rem, 5vw, 4.5rem) clamp(1.5rem, 5vw, 4rem);
+        overflow: hidden;
+      }
+
+      .brand {
+        font-family: "DM Serif Display", serif;
+        font-size: 1.4rem;
+        letter-spacing: -0.01em;
+        margin-bottom: 2.5rem;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+
+      .brand em {
+        color: var(--accent);
+        font-style: normal;
+      }
+
+      /* Form screens – slide within the right panel */
+      .forms-viewport {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .form-heading {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(1.9rem, 3vw, 2.5rem);
+        line-height: 1.1;
+        color: var(--ink);
+        margin-bottom: 0.35rem;
+      }
+
+      .form-sub {
+        font-size: 14px;
+        color: var(--muted);
+        margin-bottom: 2rem;
+      }
+
+      /* Fields */
+      .field-wrap {
+        position: relative;
+        margin-bottom: 1.1rem;
+      }
+
+      .field-wrap label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 5px;
+      }
+
+      .field-wrap input {
+        width: 100%;
+        padding: 0.72rem 1rem;
+        background: var(--field-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 15px;
+        color: var(--ink);
+        outline: none;
+        transition:
+          border-color 0.18s,
+          box-shadow 0.18s;
+      }
+
+      .field-wrap input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(200, 67, 43, 0.12);
+      }
+
+      .field-wrap input.is-invalid {
+        border-color: #c0392b;
+      }
+
+      .forgot-link {
+        font-size: 13px;
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 500;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: inherit;
+      }
+      .forgot-link:hover {
+        color: var(--accent-dark);
+        text-decoration: underline;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Divider */
+      .or-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 1.3rem 0;
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .or-divider::before,
+      .or-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* Social buttons */
+      .btn-social {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 0.65rem;
+        background: var(--field-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        color: var(--ink);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+        margin-bottom: 0.55rem;
+        text-decoration: none;
+      }
+      .btn-social:hover {
+        background: #ede9e1;
+        border-color: #bfbab1;
+        color: var(--ink);
+      }
+
+      .signup-link {
+        margin-top: 1.5rem;
+        font-size: 13px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .signup-link a {
+        color: var(--accent);
+        font-weight: 500;
+        text-decoration: none;
+      }
+      .signup-link a:hover {
+        text-decoration: underline;
+      }
+
+      /* ── Forgot Password form ── */
+      #forgot-form-wrap {
+        display: none;
+      }
+
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        color: var(--accent);
+        font-weight: 500;
+        cursor: pointer;
+        padding: 0;
+        margin-bottom: 2rem;
+        transition: gap 0.2s;
+      }
+      .back-btn:hover {
+        gap: 10px;
+        color: var(--accent-dark);
+      }
+      .back-btn svg {
+        transition: transform 0.2s;
+      }
+      .back-btn:hover svg {
+        transform: translateX(-3px);
+      }
+
+      /* ── Toast ── */
+      .toast-wrap {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+      }
+      .toast-box {
+        background: var(--ink);
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        transform: translateY(12px);
+        opacity: 0;
+        transition:
+          opacity 0.25s,
+          transform 0.25s;
+      }
+      .toast-box.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrap">
+      <!-- ══ LEFT PANEL – Image Carousel ══ -->
+      <div class="panel-left">
+        <div class="big-char">A</div>
+
+        <div class="carousel-track" id="carouselTrack">
+          <!-- Slide 1 -->
+          <div class="carousel-slide">
+            <img
+              src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&auto=format&fit=crop&q=80"
+              alt="Mountain landscape"
+            />
+            <div class="slide-caption">
+              <div class="divider-line"></div>
+              <p>
+                Welcome back.<br /><em
+                  style="color: #e8856e; font-style: normal"
+                  >Sign in</em
+                >
+                to continue.
+              </p>
+              <span>Trusted by 50,000+ users worldwide</span>
+            </div>
+          </div>
+          <!-- Slide 2 -->
+          <div class="carousel-slide">
+            <img
+              src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=900&auto=format&fit=crop&q=80"
+              alt="Forest lake"
+            />
+            <div class="slide-caption">
+              <div class="divider-line"></div>
+              <p>
+                Every journey<br /><em
+                  style="color: #e8856e; font-style: normal"
+                  >starts</em
+                >
+                with a step.
+              </p>
+              <span>Building the future together</span>
+            </div>
+          </div>
+          <!-- Slide 3 -->
+          <div class="carousel-slide">
+            <img
+              src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=900&auto=format&fit=crop&q=80"
+              alt="Aerial nature"
+            />
+            <div class="slide-caption">
+              <div class="divider-line"></div>
+              <p>
+                Your work,<br /><em style="color: #e8856e; font-style: normal"
+                  >elevated</em
+                >
+                to new heights.
+              </p>
+              <span>Premium tools for modern teams</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dots -->
+        <div class="carousel-dots" id="carouselDots">
+          <button class="dot active" onclick="goTo(0)"></button>
+          <button class="dot" onclick="goTo(1)"></button>
+          <button class="dot" onclick="goTo(2)"></button>
+        </div>
+      </div>
+
+      <!-- ══ RIGHT PANEL – Forms ══ -->
+      <div class="panel-right">
+        <div class="brand">Anu.<em>.</em></div>
+
+        <div class="forms-viewport">
+          <!-- Login form -->
+          <div id="login-form-wrap">
+            <h1 class="form-heading">Sign in</h1>
+            <p class="form-sub">
+              Don't have an account?
+              <a
+                href="#"
+                class="forgot-link"
+                style="font-size: 14px"
+                onclick="return false;"
+                >Create one free</a
+              >
+            </p>
+
+            <form id="loginForm" class="needs-validation" novalidate>
+              <div class="mb-3">
+                <label
+                  for="email"
+                  class="form-label text-uppercase small text-muted"
+                  >Email address</label
+                >
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  placeholder="you@example.com"
+                  onkeyup="abc()"
+                />
+              </div>
+
+              <div class="mb-3 position-relative">
+                <label class="form-label text-uppercase small text-muted"
+                  >Password</label
+                >
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  placeholder="password..."
+                  onkeyup="abc()"
+                />
+
+                <button
+                  type="button"
+                  class="btn position-absolute top-50 end-0 translate-middle-y me-2 p-0 border-0 bg-transparent"
+                  id="eye-toggle"
+                ></button>
+              </div>
+
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="remember"
+                  />
+                  <label class="form-check-label small text-muted"
+                    >Remember me</label
+                  >
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-link p-0 text-danger small"
+                  id="forgotBtn"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-danger w-100"
+                onclick="sub()"
+              >
+                Sign in
+              </button>
+            </form>
+
+            <div class="or-divider">or</div>
+
+            <a href="#" class="btn-social" onclick="return false;">
+              <svg width="18" height="18" viewBox="0 0 48 48"></svg>
+              Continue with Google
+            </a>
+
+            <a href="#" class="btn-social" onclick="return false;">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              ></svg>
+              Continue with GitHub
+            </a>
+
+            <div class="signup-link">
+              Already have an account? <a href="#">Sign up instead</a>
+            </div>
+          </div>
+
+          <!-- Forgot Password form -->
+          <div id="forgot-form-wrap">
+            <button class="back-btn" id="backBtn">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></svg>
+              Back to sign in
+            </button>
+
+            <h1 class="form-heading">Reset password</h1>
+            <p class="form-sub">
+              Enter your email and we'll send you a link to reset your password.
+            </p>
+
+            <form id="forgotForm" novalidate>
+              <div class="field-wrap">
+                <label for="forgot-email">Email address</label>
+                <input
+                  type="email"
+                  id="forgot-email"
+                  placeholder="you@example.com"
+                  autocomplete="email"
+                />
+              </div>
+              <button
+                type="button"
+                class="btn btn-danger w-100"
+                onclick="sub()"
+              >
+                Send reset link
+              </button>
+            </form>
+          </div>
+        </div>
+        <!-- /forms-viewport -->
+      </div>
+      <!-- /panel-right -->
+    </div>
+    <!-- /page-wrap -->
+
+    <!-- Toast -->
+    <div class="toast-wrap">
+      <div class="toast-box" id="toast"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function sub() {
+        if (document.getElementById("email").value == "") {
+          document.getElementById("email").style.borderColor = "red";
+          return false;
+        }
+        if (document.getElementById("password").value == "") {
+          document.getElementById("password").style.borderColor = "red";
+          return false;
+        }
+      }
+
+      function abc() {
+        if (document.getElementById("email").value != "") {
+          document.getElementById("email").style.borderColor = "";
+        }
+        if (document.getElementById("password").value != "") {
+          document.getElementById("password").style.borderColor = "";
+        }
+      }
+    </script>
+    <script>
+      /* ══ CAROUSEL ══ */
+      const track = document.getElementById("carouselTrack");
+      const dots = document.querySelectorAll(".dot");
+      let current = 0;
+      const total = 3;
+      let autoTimer;
+
+      function goTo(idx) {
+        current = (idx + total) % total;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle("active", i === current));
+      }
+
+      function nextSlide() {
+        goTo(current + 1);
+      }
+
+      function startAuto() {
+        autoTimer = setInterval(nextSlide, 4500);
+      }
+
+      startAuto();
+      document.getElementById("carouselDots").addEventListener("click", () => {
+        clearInterval(autoTimer);
+        startAuto();
+      });
+
+      /* ══ PANEL SWAP (Forgot / Back) ══ */
+      const loginWrap = document.getElementById("login-form-wrap");
+      const forgotWrap = document.getElementById("forgot-form-wrap");
+
+      document.getElementById("forgotBtn").addEventListener("click", () => {
+        document.body.classList.add("swapped");
+        loginWrap.style.display = "none";
+        forgotWrap.style.display = "block";
+      });
+
+      document.getElementById("backBtn").addEventListener("click", () => {
+        document.body.classList.remove("swapped");
+        forgotWrap.style.display = "none";
+        loginWrap.style.display = "block";
+      });
+
+      /* ══ PASSWORD TOGGLE ══ */
+      const pwdField = document.getElementById("password");
+      const eyeToggle = document.getElementById("eye-toggle");
+      const eyeIcon = document.getElementById("eye-icon");
+
+      eyeToggle.addEventListener("click", () => {
+        const show = pwdField.type === "password";
+        pwdField.type = show ? "text" : "password";
+        eyeIcon.innerHTML = show ? eyeClosed : eyeOpen;
+      });
+
+      /* ══ FORGOT SUBMIT ══ */
+      document
+        .getElementById("forgotForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const email = document.getElementById("forgot-email").value.trim();
+
+          if (!validateEmail(email)) {
+            setError("forgot-email", "forgot-email-error", true);
+            return;
+          }
+          setError("forgot-email", "forgot-email-error", false);
+
+          const btn = document.getElementById("resetBtn");
+          btn.classList.add("loading");
+          btn.disabled = true;
+
+          setTimeout(() => {
+            btn.classList.remove("loading");
+            btn.disabled = false;
+            showToast("Reset link sent! Check your inbox.");
+            document.getElementById("forgot-email").value = "";
+            /* Swap back to login */
+            document.body.classList.remove("swapped");
+            forgotWrap.style.display = "none";
+            loginWrap.style.display = "block";
+          }, 1500);
+        });
+    </script>
+  </body>
+</html>
